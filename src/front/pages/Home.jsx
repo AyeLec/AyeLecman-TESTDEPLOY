@@ -38,6 +38,7 @@ export const Home = () => {
 			<p className="lead">
 				<img src={rigoImageUrl} className="img-fluid rounded-circle mb-3" alt="Rigo Baby" />
 			</p>
+			<h1>DEPLOY TEST</h1>
 			<div className="alert alert-info">
 				{store.message ? (
 					<span>{store.message}</span>
