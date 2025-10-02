@@ -65,6 +65,14 @@ def serve_any_other_file(path):
     response.cache_control.max_age = 0  # avoid cache memory
     return response
 
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    return send_from_directory(os.path.join(static_file_dir, 'assets'), filename)
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(static_file_dir, 'favicon.ico')
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
