@@ -3,7 +3,7 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 import os
 import mimetypes
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, abort
 from flask_migrate import Migrate
 from flask_swagger import swagger  # si no lo usás, podés removerlo
 from api.utils import APIException, generate_sitemap
@@ -25,6 +25,30 @@ app.url_map.strict_slashes = False
 
 # Aseguramos MIME correcto para JS
 mimetypes.add_type("application/javascript", ".js")
+
+# ---- DEBUG PRINTS ----
+print("=== STATIC CONFIG ===")
+print("DIST_DIR:", DIST_DIR)
+print("INDEX exists?:", os.path.exists(os.path.join(DIST_DIR, "index.html")))
+assets_dir = os.path.join(DIST_DIR, "assets")
+print("ASSETS DIR exists?:", os.path.isdir(assets_dir))
+try:
+    print("ASSETS sample:", sorted(os.listdir(assets_dir))[:5])
+except Exception as e:
+    print("ASSETS list error:", e)
+print("=====================")
+# -----------------------
+
+# Ruta explícita para assets (evita que el fallback devuelva index.html)
+@app.route("/assets/<path:filename>")
+def assets(filename):
+    assets_dir = os.path.join(DIST_DIR, "assets")
+    file_path = os.path.join(assets_dir, filename)
+    if not os.path.isfile(file_path):
+        print(f"[ERROR] Asset no encontrado: {file_path}")
+        abort(404)
+    print(f"[OK] Sirviendo asset: {file_path}")
+    return send_from_directory(assets_dir, filename)
 
 # ------------------------------------------------------------
 # Configuración de base de datos
@@ -64,17 +88,24 @@ def handle_invalid_usage(error):
 def root():
     if ENV == "development":
         return generate_sitemap(app)
+    index_path = os.path.join(DIST_DIR, "index.html")
+    if not os.path.isfile(index_path):
+        print(f"[ERROR] No se encontró index.html en {index_path}")
+        abort(404)
+    print(f"[OK] Sirviendo index.html desde {index_path}")
     return app.send_static_file("index.html")
 
 @app.route("/favicon.ico")
 def favicon():
     return send_from_directory(DIST_DIR, "favicon.ico")
 
-# Fallback SPA: si no es /api y no existe archivo, devolvemos index.html
+# Fallback SPA: si no es /api ni /assets, devolvemos index.html
 @app.errorhandler(404)
 def spa_fallback(_e):
-    if request.path.startswith("/api/"):
+    if request.path.startswith("/api/") or request.path.startswith("/assets/"):
+        print(f"[404] Ruta API/Assets no encontrada: {request.path}")
         return jsonify({"error": "Not found"}), 404
+    print(f"[SPA] Ruta {request.path} redirigida a index.html")
     return app.send_static_file("index.html")
 
 # ------------------------------------------------------------
