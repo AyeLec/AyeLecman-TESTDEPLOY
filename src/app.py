@@ -16,7 +16,7 @@ from api.commands import setup_commands
 # ------------------------------------------------------------
 ENV = "development" if os.getenv("FLASK_DEBUG") == "1" else "production"
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))   # .../src
-DIST_DIR = os.path.join(BASE_DIR, "../dist")             # .../dist
+DIST_DIR = os.path.join(BASE_DIR, "dist")          # .../dist
 
 # Servimos dist/ como carpeta estática en la raíz del sitio
 # (esto hace que /assets/* y archivos estáticos salgan con MIME correcto)
