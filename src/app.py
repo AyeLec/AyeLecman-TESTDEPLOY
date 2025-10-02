@@ -23,6 +23,26 @@ DIST_DIR = os.path.join(BASE_DIR, "../dist")             # .../dist
 app = Flask(__name__, static_folder=DIST_DIR, static_url_path="")
 app.url_map.strict_slashes = False
 
+# ---- DEBUG PRINTS ----
+print("DIST_DIR:", DIST_DIR)
+print("INDEX exists?:", os.path.exists(os.path.join(DIST_DIR, "index.html")))
+assets_dir = os.path.join(DIST_DIR, "assets")
+print("ASSETS DIR exists?:", os.path.isdir(assets_dir))
+try:
+    print("ASSETS sample:", sorted(os.listdir(assets_dir))[:5])
+except Exception as e:
+    print("ASSETS list error:", e)
+# -----------------------
+
+# ⬇️⬇️ INSERTAR AQUÍ ⬇️⬇️
+import mimetypes
+mimetypes.add_type("application/javascript", ".js")  # por las dudas del MIME
+
+@app.route("/assets/<path:filename>")
+def assets(filename):
+    return send_from_directory(os.path.join(DIST_DIR, "assets"), filename)
+# ⬆️⬆️ HASTA AQUÍ ⬆️⬆️
+
 # ------------------------------------------------------------
 # Configuración de base de datos
 # ------------------------------------------------------------
