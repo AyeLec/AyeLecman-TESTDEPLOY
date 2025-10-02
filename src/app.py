@@ -28,16 +28,24 @@ mimetypes.add_type("application/javascript", ".js")
 
 # ---- DEBUG PRINTS ----
 print("=== STATIC CONFIG ===")
+print("BASE_DIR:", BASE_DIR)
 print("DIST_DIR:", DIST_DIR)
-print("INDEX exists?:", os.path.exists(os.path.join(DIST_DIR, "index.html")))
-assets_dir = os.path.join(DIST_DIR, "assets")
-print("ASSETS DIR exists?:", os.path.isdir(assets_dir))
+print("Current working directory:", os.getcwd())
+print("Contents of project root:")
 try:
-    print("ASSETS sample:", sorted(os.listdir(assets_dir))[:5])
+    for item in os.listdir(os.path.join(BASE_DIR, "..")):
+        print("  -", item)
 except Exception as e:
-    print("ASSETS list error:", e)
+    print("Error listing root:", e)
+    
+print("Contents of DIST_DIR:")
+try:
+    for item in os.listdir(DIST_DIR):
+        print("  -", item)
+except Exception as e:
+    print("Error listing dist:", e)
 print("=====================")
-# -----------------------
+#------------------------------------------------
 
 # Ruta explícita para assets (evita que el fallback devuelva index.html)
 @app.route("/assets/<path:filename>")
@@ -93,20 +101,33 @@ def root():
         print(f"[ERROR] No se encontró index.html en {index_path}")
         abort(404)
     print(f"[OK] Sirviendo index.html desde {index_path}")
-    return app.send_static_file("index.html")
+    return send_from_directory(DIST_DIR, "index.html")
 
 @app.route("/favicon.ico")
 def favicon():
     return send_from_directory(DIST_DIR, "favicon.ico")
 
-# Fallback SPA: si no es /api ni /assets, devolvemos index.html
-@app.errorhandler(404)
-def spa_fallback(_e):
-    if request.path.startswith("/api/") or request.path.startswith("/assets/"):
-        print(f"[404] Ruta API/Assets no encontrada: {request.path}")
-        return jsonify({"error": "Not found"}), 404
-    print(f"[SPA] Ruta {request.path} redirigida a index.html")
-    return app.send_static_file("index.html")
+# Ruta para servir archivos estáticos específicos que existen
+@app.route("/<path:path>")
+def serve_static_or_spa(path):
+    # Si el archivo existe físicamente en dist, servirlo
+    file_path = os.path.join(DIST_DIR, path)
+    if os.path.isfile(file_path):
+        print(f"[OK] Sirviendo archivo estático: {file_path}")
+        return send_from_directory(DIST_DIR, path)
+    
+    # Si es una ruta de API, devolver 404
+    if path.startswith("api/"):
+        return jsonify({"error": "API endpoint not found"}), 404
+    
+    # Para cualquier otra ruta (SPA), servir index.html
+    index_path = os.path.join(DIST_DIR, "index.html")
+    if not os.path.isfile(index_path):
+        print(f"[ERROR] No se encontró index.html en {index_path}")
+        abort(404)
+    
+    print(f"[SPA] Ruta /{path} redirigida a index.html")
+    return send_from_directory(DIST_DIR, "index.html")
 
 # ------------------------------------------------------------
 # Healthcheck simple para Render

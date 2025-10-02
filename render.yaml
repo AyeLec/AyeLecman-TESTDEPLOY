@@ -6,7 +6,11 @@ services:
     region: ohio
     name: lexquo-backend
     env: python
-    buildCommand: npm install && npm run build && pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+    buildCommand: |
+      pip install --upgrade pip setuptools wheel
+      pip install -r requirements.txt
+      npm install
+      npm run build
     startCommand: gunicorn app:app --chdir src --bind 0.0.0.0:$PORT
     plan: free
     numInstances: 1
